@@ -55,16 +55,16 @@ void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resu
 // Main function
 int main() {
     // Example matrices
-    Matrix matrix1 = {{1, 2, 3},
-                      {4, 5, 6},
-                      {7, 8, 9}};
-    Matrix matrix2 = {{9, 8, 7},
-                      {6, 5, 4}};
+    Matrix matrix1 = {{1, 2},
+                      {3, 4},
+                      {5, 6}};
 
-    // Determine number of threads
-    int numThreads;
-    std::cout << "Enter number of threads: ";
-    std::cin >> numThreads;
+    Matrix matrix2 = {{7, 8, 9},
+                      {10, 11, 12}};
+
+
+    // Specify number of threads
+    int numThreads = 2; // Change this to desired number of threads
 
     // Result matrix
     Matrix resultMatrix(matrix1.size(), std::vector<int>(matrix2[0].size()));
