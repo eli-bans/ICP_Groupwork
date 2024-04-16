@@ -3,6 +3,7 @@
 #include <thread>
 #include <mutex>
 #include <stdexcept>
+#include <random> // to generate random numbers
 
 // Define matrix type for simplicity
 using Matrix = std::vector<std::vector<int>>;
@@ -22,6 +23,39 @@ void multiplyRows(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMa
             mtx.unlock(); // Release lock after writing
         }
     }
+}
+
+// Generate random sized matrix
+Matrix generateMatrix() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> disSquare(0, 1); // range for random pick between square or no square matrix
+    std::uniform_int_distribution<> disSize(2, 10); // range for random pick for matrix size.
+
+    // Randomly decide whether to generate a square or non-square matrix
+    bool squareMatrix = disSquare(gen) == 1;
+
+    int numRows, numCols;
+    if (squareMatrix) {
+        int size = disSize(gen); // randomly generate
+        numRows = size;
+        numCols = size;
+    } else {
+        numRows = disSize(gen);
+        numCols = disSize(gen);
+    }
+
+    Matrix matrix(numRows, std::vector<int>(numCols));
+
+    // populate matrix with constant number since values don't matter
+    int value = 1;
+    for (int i = 0; i < numRows; ++i) {
+        for (int j = 0; j < numCols; ++j) {
+            matrix[i][j] = value++;
+        }
+    }
+
+    return matrix;
 }
 
 // Function to perform matrix multiplication using threads
