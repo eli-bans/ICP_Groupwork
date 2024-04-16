@@ -4,6 +4,8 @@
 #include <mutex>
 #include <stdexcept>
 #include <random> // to generate random numbers
+#include <fstream> // For ofstream - outputting from runtime to external file
+#include <chrono>
 
 // Define matrix type for simplicity
 using Matrix = std::vector<std::vector<int>>;
@@ -56,6 +58,25 @@ Matrix generateMatrix() {
     }
 
     return matrix;
+}
+
+// Measure time taken for computation and write to csv file
+void measureAndWritePerformance(int numThreads, ofstream& outputFile) {
+    // Generate matrices
+    Matrix matrix1 = generateRandomMatrix();
+    Matrix matrix2 = generateRandomMatrix();
+    Matrix resultMatrix(matrix1.size(), vector<int>(matrix2[0].size()));
+
+    // Measure time taken for computation
+    auto start = std::high_resolution_clock::now();
+    multiplyMatrices(matrix1, matrix2, resultMatrix, numThreads);
+    auto stop = std::high_resolution_clock::now();
+    auto duration = std::duration_cast<milliseconds>(stop - start);
+
+    int totalElements = matrix1.size() * matrix1[0].size() + matrix2.size() * matrix2[0].size();
+
+    // Output benchmark results to file
+    outputFile << totalElements << "," << numThreads << "," << duration.count() << endl;
 }
 
 // Function to perform matrix multiplication using threads
