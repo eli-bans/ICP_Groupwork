@@ -107,6 +107,31 @@ void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resu
     }
 }
 
+void runBenchmark(int maxThreads) {
+    try {
+        // open results file
+        std::ofstream outputFile("benchmark_results.csv");
+        if (!outputFile.is_open()) {
+            throw std::runtime_error("Error: Could not open output file.");
+        }
+
+        // First row with headers
+        outputFile << "Matrix Size,Thread Count,Execution Time (ms)" << std::endl;
+
+        // perform matrix multiplication with different threads 
+        for (int i = 0; i <= maxThreads; ++i) {
+            measureAndWritePerformance(i, outputFile);
+        }
+
+        // Close output file
+        outputFile.close();
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        throw; // Re-throw exception for outer try cath if one is available.
+    }
+}
+
 // Main function
 int main() {
     // Example matrices
