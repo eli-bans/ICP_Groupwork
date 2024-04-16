@@ -27,6 +27,34 @@ void multiplyRows(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMa
     }
 }
 
+// Function to perform matrix multiplication using threads
+void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMatrix, int numThreads) {
+    int rows1 = matrix1.size();
+    int cols1 = matrix1[0].size();
+    int cols2 = matrix2[0].size();
+
+    // Check if matrix multiplication is possible
+    if (cols1 != matrix2.size()) {
+        throw std::invalid_argument("Matrix dimensions are invalid for multiplication");
+    }
+
+    int rowsPerThread = rows1 / numThreads;
+    std::vector<std::thread> threads;
+    std::mutex mtx; // Mutex for synchronization
+
+    // Create threads to perform matrix multiplication
+    for (int i = 0; i < numThreads; ++i) {
+        int startRow = i * rowsPerThread;
+        int endRow = (i == numThreads - 1) ? rows1 : (i + 1) * rowsPerThread;
+        threads.emplace_back(multiplyRows, std::ref(matrix1), std::ref(matrix2), std::ref(resultMatrix), startRow, endRow, std::ref(mtx));
+    }
+
+    // Join threads to wait for completion
+    for (auto& thread : threads) {
+        thread.join();
+    }
+}
+
 // Generate random sized matrix
 Matrix generateMatrix() {
     std::random_device rd;
@@ -63,8 +91,8 @@ Matrix generateMatrix() {
 // Measure time taken for computation and write to csv file
 void measureAndWritePerformance(int numThreads, ofstream& outputFile) {
     // Generate matrices
-    Matrix matrix1 = generateRandomMatrix();
-    Matrix matrix2 = generateRandomMatrix();
+    Matrix matrix1 = generateMatrix();
+    Matrix matrix2 = generateMatrix();
     Matrix resultMatrix(matrix1.size(), vector<int>(matrix2[0].size()));
 
     // Measure time taken for computation
@@ -79,34 +107,7 @@ void measureAndWritePerformance(int numThreads, ofstream& outputFile) {
     outputFile << totalElements << "," << numThreads << "," << duration.count() << endl;
 }
 
-// Function to perform matrix multiplication using threads
-void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMatrix, int numThreads) {
-    int rows1 = matrix1.size();
-    int cols1 = matrix1[0].size();
-    int cols2 = matrix2[0].size();
-
-    // Check if matrix multiplication is possible
-    if (cols1 != matrix2.size()) {
-        throw std::invalid_argument("Matrix dimensions are invalid for multiplication");
-    }
-
-    int rowsPerThread = rows1 / numThreads;
-    std::vector<std::thread> threads;
-    std::mutex mtx; // Mutex for synchronization
-
-    // Create threads to perform matrix multiplication
-    for (int i = 0; i < numThreads; ++i) {
-        int startRow = i * rowsPerThread;
-        int endRow = (i == numThreads - 1) ? rows1 : (i + 1) * rowsPerThread;
-        threads.emplace_back(multiplyRows, std::ref(matrix1), std::ref(matrix2), std::ref(resultMatrix), startRow, endRow, std::ref(mtx));
-    }
-
-    // Join threads to wait for completion
-    for (auto& thread : threads) {
-        thread.join();
-    }
-}
-
+// Run test functions and write results to benchmark file
 void runBenchmark(int maxThreads) {
     try {
         // open results file
@@ -164,6 +165,8 @@ int main() {
     } catch (const std::invalid_argument& e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }
+
+    runBenchmark(3);
 
     return 0;
 }
