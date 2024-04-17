@@ -56,31 +56,13 @@ void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resu
 }
 
 // Generate random sized matrix
-Matrix generateMatrix() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> disSquare(0, 1); // range for random pick between square or no square matrix
-    std::uniform_int_distribution<> disSize(2, 10); // range for random pick for matrix size.
-
-    // Randomly decide whether to generate a square or non-square matrix
-    bool squareMatrix = disSquare(gen) == 1;
-
-    int numRows, numCols;
-    if (squareMatrix) {
-        int size = disSize(gen); // randomly generate
-        numRows = size;
-        numCols = size;
-    } else {
-        numRows = disSize(gen);
-        numCols = disSize(gen);
-    }
-
-    Matrix matrix(numRows, std::vector<int>(numCols));
+Matrix generateMatrix(int rows, int cols, std::mt19937& gen, std::uniform_int_distribution<>& disSize) {
+    Matrix matrix(rows, std::vector<int>(cols));
 
     // populate matrix with constant number since values don't matter
     int value = 1;
-    for (int i = 0; i < numRows; ++i) {
-        for (int j = 0; j < numCols; ++j) {
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
             matrix[i][j] = value++;
         }
     }
@@ -89,29 +71,52 @@ Matrix generateMatrix() {
 }
 
 // Measure time taken for computation and write to csv file
-void measureAndWritePerformance(int numThreads, ofstream& outputFile) {
-    // Generate matrices
-    Matrix matrix1 = generateMatrix();
-    Matrix matrix2 = generateMatrix();
-    Matrix resultMatrix(matrix1.size(), vector<int>(matrix2[0].size()));
+void measureAndWritePerformance(int numThreads, std::ofstream& outputFile) {
+    // Randomly generate numbers between 1 and 10
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> disSize(1, 10);
 
-    // Measure time taken for computation
-    auto start = std::high_resolution_clock::now();
-    multiplyMatrices(matrix1, matrix2, resultMatrix, numThreads);
-    auto stop = std::high_resolution_clock::now();
-    auto duration = std::duration_cast<milliseconds>(stop - start);
+    int attempts = 0;
 
-    int totalElements = matrix1.size() * matrix1[0].size() + matrix2.size() * matrix2[0].size();
+    while(attempts < 20){
+        try{
+            // Generate matrices
+            int rows1 = disSize(gen);
+            int cols1 = disSize(gen);
+            Matrix matrix1 = generateMatrix(rows1, cols1, gen, disSize);
 
-    // Output benchmark results to file
-    outputFile << totalElements << "," << numThreads << "," << duration.count() << endl;
+            int rows2 = cols1;
+            int cols2 = disSize(gen);
+            Matrix matrix2 = generateMatrix(rows2, cols2, gen, disSize);
+
+            Matrix resultMatrix(rows1, std::vector<int>(cols2));
+
+            // Measure time taken for computation
+            auto start = std::chrono::high_resolution_clock::now();
+            multiplyMatrices(matrix1, matrix2, resultMatrix, numThreads);
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+            int totalElements = matrix1.size() * matrix1[0].size() + matrix2.size() * matrix2[0].size();
+
+            // Output benchmark results to file
+            outputFile << totalElements << "," << numThreads << "," << duration.count() << std::endl;
+
+            attempts++;
+        } catch (const std::invalid_argument&){
+            continue; // if dimensions are not allowed, move on
+        }
+
+    }
+    
 }
 
 // Run test functions and write results to benchmark file
 void runBenchmark(int maxThreads) {
     try {
         // open results file
-        std::ofstream outputFile("benchmark_results.csv");
+        std::ofstream outputFile("benchmark_results.csv", std::ios::app);
         if (!outputFile.is_open()) {
             throw std::runtime_error("Error: Could not open output file.");
         }
@@ -120,7 +125,7 @@ void runBenchmark(int maxThreads) {
         outputFile << "Matrix Size,Thread Count,Execution Time (ms)" << std::endl;
 
         // perform matrix multiplication with different threads 
-        for (int i = 0; i <= maxThreads; ++i) {
+        for (int i = 1; i <= maxThreads; ++i) {
             measureAndWritePerformance(i, outputFile);
         }
 
@@ -166,7 +171,7 @@ int main() {
         std::cerr << "Error: " << e.what() << std::endl;
     }
 
-    runBenchmark(3);
+    runBenchmark(17);
 
     return 0;
 }
