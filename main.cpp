@@ -8,21 +8,20 @@
 using Matrix = std::vector<std::vector<int>>;
 
 // Function to multiply a range of rows of matrix1 with matrix2 and store the result in resultMatrix
-void multiplyRows(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMatrix, int startRow, int endRow, std::mutex& mtx) {
-    int cols1 = matrix1[0].size();
-    int cols2 = matrix2[0].size();
+void multiplyRows(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMatrix, int startRow, int endRow) {
+    int cols1 = matrix1[0].size(); // Number of columns in matrix1
     for (int i = startRow; i < endRow; ++i) {
-        for (int j = 0; j < cols2; ++j) {
+        for (int j = 0; j < resultMatrix[i].size(); ++j) { // Iterate over columns of resultMatrix
             int sum = 0;
             for (int k = 0; k < cols1; ++k) {
                 sum += matrix1[i][k] * matrix2[k][j];
             }
-            mtx.lock(); // Acquire lock before writing to resultMatrix
             resultMatrix[i][j] = sum;
-            mtx.unlock(); // Release lock after writing
         }
     }
 }
+
+
 
 // Function to perform matrix multiplication using threads
 void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMatrix, int numThreads) {
@@ -35,15 +34,22 @@ void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resu
         throw std::invalid_argument("Matrix dimensions are invalid for multiplication");
     }
 
+    // If numThreads is 0, perform multiplication sequentially
+    if (numThreads == 0) {
+        for (int i = 0; i < rows1; ++i) {
+            multiplyRows(matrix1, matrix2, resultMatrix, i, i + 1); // Call multiplyRows for each row
+        }
+        return; // No need to create threads
+    }
+
     int rowsPerThread = rows1 / numThreads;
     std::vector<std::thread> threads;
-    std::mutex mtx; // Mutex for synchronization
 
     // Create threads to perform matrix multiplication
     for (int i = 0; i < numThreads; ++i) {
         int startRow = i * rowsPerThread;
         int endRow = (i == numThreads - 1) ? rows1 : (i + 1) * rowsPerThread;
-        threads.emplace_back(multiplyRows, std::ref(matrix1), std::ref(matrix2), std::ref(resultMatrix), startRow, endRow, std::ref(mtx));
+        threads.emplace_back(multiplyRows, std::ref(matrix1), std::ref(matrix2), std::ref(resultMatrix), startRow, endRow);
     }
 
     // Join threads to wait for completion
