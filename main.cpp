@@ -7,7 +7,15 @@
 // Define matrix type for simplicity
 using Matrix = std::vector<std::vector<int>>;
 
-// Function to multiply a range of rows of matrix1 with matrix2 and store the result in resultMatrix
+/**
+ * Function to multiply rows of two matrices and store the result in another matrix
+ * @param matrix1 First matrix
+ * @param matrix2 Second matrix
+ * @param resultMatrix Result matrix
+ * @param startRow Start row index
+ * @param endRow End row index
+ * @return None
+ */
 void multiplyRows(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMatrix, int startRow, int endRow) {
     int cols1 = matrix1[0].size(); // Number of columns in matrix1
     for (int i = startRow; i < endRow; ++i) {
@@ -23,18 +31,29 @@ void multiplyRows(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMa
 
 
 
-// Function to perform matrix multiplication using threads
+/**
+ * Function to multiply two matrices using threads
+ * @param matrix1  First matrix
+ * @param matrix2  Second matrix
+ * @param resultMatrix  Result matrix
+ * @param numThreads  Number of threads to use
+ */
 void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resultMatrix, int numThreads) {
     int rows1 = matrix1.size();
     int cols1 = matrix1[0].size();
     int cols2 = matrix2[0].size();
 
-    // Check if matrix multiplication is possible
+    /**
+     * Check if matrix dimensions are valid for multiplication
+     * Number of columns in matrix1 should be equal to number of rows in matrix2
+     */
     if (cols1 != matrix2.size()) {
         throw std::invalid_argument("Matrix dimensions are invalid for multiplication");
     }
 
-    // If numThreads is 0, perform multiplication sequentially
+   /**
+    * If number of threads is 0, perform matrix multiplication sequentially
+    */
     if (numThreads == 0) {
         for (int i = 0; i < rows1; ++i) {
             multiplyRows(matrix1, matrix2, resultMatrix, i, i + 1); // Call multiplyRows for each row
@@ -45,20 +64,29 @@ void multiplyMatrices(const Matrix& matrix1, const Matrix& matrix2, Matrix& resu
     int rowsPerThread = rows1 / numThreads;
     std::vector<std::thread> threads;
 
-    // Create threads to perform matrix multiplication
+   /**
+    * Create threads to multiply rows of matrices
+    * Each thread will multiply a subset of rows
+    */
     for (int i = 0; i < numThreads; ++i) {
         int startRow = i * rowsPerThread;
         int endRow = (i == numThreads - 1) ? rows1 : (i + 1) * rowsPerThread;
         threads.emplace_back(multiplyRows, std::ref(matrix1), std::ref(matrix2), std::ref(resultMatrix), startRow, endRow);
     }
 
-    // Join threads to wait for completion
+   /**
+    * Wait for all threads to finish execution
+    */
     for (auto& thread : threads) {
         thread.join();
     }
 }
 
-// Main function
+/**
+ * Main function to test matrix multiplication
+ * @param None
+ * @return  0
+ */
 int main() {
     // Example matrices
     Matrix matrix1 = {{1, 2},
