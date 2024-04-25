@@ -31,6 +31,6 @@ To use this program:
 Special thanks to:
 - [Palal Asare](https://github.com/P-Asare)
 - [Chelsea Owusu](https://github.com/Chelsea-Owusu-Pokuaah)
-- [Alvin Brocke] 
+- Alvin Brocke
 
----
+
